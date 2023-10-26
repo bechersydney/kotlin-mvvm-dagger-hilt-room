@@ -15,11 +15,11 @@ import dagger.hilt.components.SingletonComponent
 @InstallIn(SingletonComponent::class)
 object AppModule {
     @Provides
-    fun providesRunDatabase(@ApplicationContext context: Context) =
+    fun providesRunDatabase(context: Context) =
         Room.databaseBuilder(context, RunningDatabase::class.java, RUNNING_DATABASE).build()
 
     @Provides
-    fun provideContext(context: Context):Context = context.applicationContext
+    fun provideContext(@ApplicationContext context: Context):Context = context.applicationContext
 
     @Provides
     fun provideRunDao(db: RunningDatabase): RunDao = db.getRunDao()

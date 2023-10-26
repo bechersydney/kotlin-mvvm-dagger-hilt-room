@@ -1,4 +1,11 @@
 <resources>
     <string name="app_name">kotlin-running-tracker</string>
+    <string-array name="filter_options">
+        <item>Date</item>
+        <item>Running Time</item>
+        <item>Distance</item>
+        <item>Average Speed</item>
+        <item>Calories Burned</item>
+    </string-array>
     <string name="google_maps_key">AIzaSyDn0bDvcR5eg2ozMMdJOBq3yllQzioagz4</string>
 </resources>
