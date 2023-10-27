@@ -5,7 +5,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.PendingIntent.FLAG_IMMUTABLE
-import android.app.PendingIntent.FLAG_UPDATE_CURRENT
 import android.content.Context
 import android.content.Intent
 import android.location.Location
@@ -17,7 +16,7 @@ import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.location.*
 import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
 import com.google.android.gms.maps.model.LatLng
-import com.sample.kotlin_running_tracker.services.actions.TrackingServiceActions
+import com.sample.kotlin_running_tracker.R
 import com.sample.kotlin_running_tracker.services.actions.TrackingServiceActions.*
 import com.sample.kotlin_running_tracker.utils.Constants.NOTIFICATION_CHANNEL_ID
 import com.sample.kotlin_running_tracker.utils.Constants.NOTIFICATION_ID
@@ -64,6 +63,7 @@ class TrackerService : LifecycleService() {
         postInitialValues()
         isTracking.observe(this) {
             updateLocationTracking(it)
+            updateNotificationTrackingState(it)
         }
     }
 
@@ -115,6 +115,13 @@ class TrackerService : LifecycleService() {
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotification(notificationManager)
         startForeground(NOTIFICATION_ID, baseNotificationBuilder.build())
+
+        timeInSeconds.observe(this) {
+            val notification = currentNotificationBuilder.setContentText(
+                TrackingUtility.getFormattedStopWatchTime(it * 1000L)
+            )
+            notificationManager.notify(NOTIFICATION_ID, notification.build())
+        }
     }
 
 
@@ -192,7 +199,7 @@ class TrackerService : LifecycleService() {
                 timeInMillis.postValue(timeRun + lapTime)
 
                 if (timeInMillis.value!! > lastSecondTimeStamp + 1000) {
-                    timeInSeconds.postValue(lastSecondTimeStamp + 1)
+                    timeInSeconds.postValue(timeInSeconds.value!! + 1)
                     lastSecondTimeStamp += 1000L
                 }
 
@@ -220,6 +227,19 @@ class TrackerService : LifecycleService() {
 
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        createNotification(notificationManager)
+
+        // remove all action from notification
+        currentNotificationBuilder.javaClass.getDeclaredField("mActions").apply {
+            isAccessible = true
+            set(currentNotificationBuilder, ArrayList<NotificationCompat.Action>())
+        }
+
+        currentNotificationBuilder =
+            baseNotificationBuilder.addAction(
+                R.drawable.ic_pause_black_24dp,
+                notificationText,
+                pendingIntent
+            )
+        notificationManager.notify(NOTIFICATION_ID, currentNotificationBuilder.build())
     }
 }
