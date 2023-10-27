@@ -1,13 +1,14 @@
 package com.sample.kotlin_running_tracker.ui.fragments
 
+import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
+import android.widget.Toast
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapsInitializer
@@ -16,10 +17,7 @@ import com.sample.kotlin_running_tracker.R
 import com.sample.kotlin_running_tracker.databinding.FragmentTrackingBinding
 import com.sample.kotlin_running_tracker.services.Polyline
 import com.sample.kotlin_running_tracker.services.TrackerService
-import com.sample.kotlin_running_tracker.services.actions.TrackingServiceActions
-import com.sample.kotlin_running_tracker.services.actions.TrackingServiceActions.ACTION_PAUSE_SERVICE
-import com.sample.kotlin_running_tracker.services.actions.TrackingServiceActions.ACTION_START_RESUME_SERVICE
-import com.sample.kotlin_running_tracker.services.actions.TrackingServiceActions.ACTION_STOP_SERVICE
+import com.sample.kotlin_running_tracker.services.actions.TrackingServiceActions.*
 import com.sample.kotlin_running_tracker.services.repository.TrackingServiceRepository
 import com.sample.kotlin_running_tracker.ui.viewmodels.MainViewModel
 import com.sample.kotlin_running_tracker.utils.TrackingUtility
@@ -28,6 +26,7 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class TrackingFragment : Fragment(R.layout.fragment_tracking) {
+    private var menu: Menu? = null
     private var binding: FragmentTrackingBinding? = null
     private val view get() = binding!!
 
@@ -35,6 +34,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
     private var isTracking = false;
     private var pathPoints = mutableListOf<Polyline>()
     private var currentTimeInMillis = 0L
+
 
     @Inject
     lateinit var mainServiceRepository: TrackingServiceRepository
@@ -46,6 +46,27 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         savedInstanceState: Bundle?
     ): View? {
         binding = FragmentTrackingBinding.inflate(inflater, container, false)
+        val menuHost: MenuHost = requireActivity()
+        menuHost.addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menuInflater.inflate(R.menu.toolbar_tracking_menu, menu)
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                return when (menuItem.itemId) {
+                    R.id.miCancelRun -> {
+                        if(currentTimeInMillis > 0L){
+                            mainServiceRepository.sendCommandToService(ACTION_STOP_SERVICE.name)
+                        } else {
+                            Toast.makeText(requireContext(), "No Run to cancel", Toast.LENGTH_SHORT).show()
+                        }
+                        true
+                    }
+                    else -> false
+                }
+            }
+
+        })
         initView(savedInstanceState)
         initEvents()
         subscribeToObserver()
@@ -137,7 +158,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         this.isTracking = isTracking
 
         when {
-             !isTracking -> {
+            !isTracking -> {
                 view.btnToggleRun.text = "Start"
                 view.btnFinishRun.visibility = View.VISIBLE
             }
@@ -154,15 +175,15 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
     }
 
     private fun subscribeToObserver() {
-        TrackerService.isTracking.observe(viewLifecycleOwner){
+        TrackerService.isTracking.observe(viewLifecycleOwner) {
             updateTracking(it)
         }
-        TrackerService.pathPoints.observe(viewLifecycleOwner){
+        TrackerService.pathPoints.observe(viewLifecycleOwner) {
             pathPoints = it
             addLatestPolyline()
             moveCameraToUser()
         }
-        TrackerService.timeInMillis.observe(viewLifecycleOwner){
+        TrackerService.timeInMillis.observe(viewLifecycleOwner) {
             currentTimeInMillis = it
             val formattedTime = TrackingUtility.getFormattedStopWatchTime(it, true)
             view.tvTimer.text = formattedTime
