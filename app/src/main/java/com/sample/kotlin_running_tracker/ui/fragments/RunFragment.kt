@@ -14,6 +14,7 @@ import com.sample.kotlin_running_tracker.R
 import com.sample.kotlin_running_tracker.databinding.FragmentRunBinding
 import com.sample.kotlin_running_tracker.ui.viewmodels.MainViewModel
 import com.sample.kotlin_running_tracker.utils.Constants
+import com.sample.kotlin_running_tracker.utils.Constants.REQUEST_CODE_LOCATION_PERMISSION
 import com.sample.kotlin_running_tracker.utils.TrackingUtility
 import dagger.hilt.android.AndroidEntryPoint
 import pub.devrel.easypermissions.AppSettingsDialog
@@ -30,7 +31,7 @@ class RunFragment: Fragment(R.layout.fragment_run), EasyPermissions.PermissionCa
         savedInstanceState: Bundle?
     ): View? {
         binding = FragmentRunBinding.inflate(inflater, container, false)
-        requestPermission()
+        requestPermissions()
         view.fab.setOnClickListener {
             findNavController().navigate(R.id.action_runFragment_to_trackingFragment)
         }
@@ -38,26 +39,28 @@ class RunFragment: Fragment(R.layout.fragment_run), EasyPermissions.PermissionCa
         return view.root
     }
 
-    private fun requestPermission(){
-        if(TrackingUtility.hasLocationPermission(requireContext())){
+    private fun requestPermissions() {
+        if(TrackingUtility.hasLocationPermission(requireContext())) {
             return
         }
-        val locationPerms = arrayOf(
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_FINE_LOCATION,
-        )
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q ){
-            locationPerms.plus(Manifest.permission.ACCESS_BACKGROUND_LOCATION,)
+        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            EasyPermissions.requestPermissions(
+                this,
+                "You need to accept location permissions to use this app.",
+                REQUEST_CODE_LOCATION_PERMISSION,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            )
+        } else {
+            EasyPermissions.requestPermissions(
+                this,
+                "You need to accept location permissions to use this app.",
+                REQUEST_CODE_LOCATION_PERMISSION,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            )
         }
-        EasyPermissions.requestPermissions(
-            this,
-            "You need to accept location permission to use this app",
-            Constants.REQUEST_CODE_LOCATION_PERMISSION,
-            *locationPerms
-
-
-        )
-
     }
 
     override fun onDestroyView() {
@@ -73,7 +76,7 @@ class RunFragment: Fragment(R.layout.fragment_run), EasyPermissions.PermissionCa
         if(EasyPermissions.somePermissionPermanentlyDenied(this, perms)){
             AppSettingsDialog.Builder(this).build().show()
         } else {
-            requestPermission()
+            requestPermissions()
         }
     }
     override fun onRequestPermissionsResult(

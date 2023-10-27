@@ -12,9 +12,9 @@ import javax.inject.Singleton
 class TrackingServiceRepository @Inject constructor(
     val context: Context
 ) {
-    fun startService(){
+    fun sendCommandToService(action: String){
         Intent(context, TrackerService::class.java).also {
-            it.action = ACTION_START_RESUME_SERVICE.name
+            it.action = action
             startServiceIntent(it)
         }
     }
