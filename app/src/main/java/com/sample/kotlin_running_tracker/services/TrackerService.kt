@@ -104,6 +104,9 @@ class TrackerService : LifecycleService() {
     private fun stopCommand() {
         if (isServiceRunning) {
             isServiceRunning = false
+            pauseCommand()
+            postInitialValues()
+            stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
         }
     }
@@ -115,12 +118,13 @@ class TrackerService : LifecycleService() {
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotification(notificationManager)
         startForeground(NOTIFICATION_ID, baseNotificationBuilder.build())
-
         timeInSeconds.observe(this) {
-            val notification = currentNotificationBuilder.setContentText(
-                TrackingUtility.getFormattedStopWatchTime(it * 1000L)
-            )
-            notificationManager.notify(NOTIFICATION_ID, notification.build())
+            if(isServiceRunning){
+                val notification = currentNotificationBuilder.setContentText(
+                    TrackingUtility.getFormattedStopWatchTime(it * 1000L)
+                )
+                notificationManager.notify(NOTIFICATION_ID, notification.build())
+            }
         }
     }
 
@@ -233,13 +237,14 @@ class TrackerService : LifecycleService() {
             isAccessible = true
             set(currentNotificationBuilder, ArrayList<NotificationCompat.Action>())
         }
-
-        currentNotificationBuilder =
-            baseNotificationBuilder.addAction(
-                R.drawable.ic_pause_black_24dp,
-                notificationText,
-                pendingIntent
-            )
-        notificationManager.notify(NOTIFICATION_ID, currentNotificationBuilder.build())
+        if(isServiceRunning){
+            currentNotificationBuilder =
+                baseNotificationBuilder.addAction(
+                    R.drawable.ic_pause_black_24dp,
+                    notificationText,
+                    pendingIntent
+                )
+            notificationManager.notify(NOTIFICATION_ID, currentNotificationBuilder.build())
+        }
     }
 }
