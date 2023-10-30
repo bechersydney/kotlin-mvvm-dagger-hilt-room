@@ -1,5 +1,6 @@
 package com.sample.kotlin_running_tracker.data.repository
 
+import androidx.lifecycle.LiveData
 import com.sample.kotlin_running_tracker.data.db.RunDao
 import com.sample.kotlin_running_tracker.data.db.entities.Run
 import javax.inject.Inject
@@ -13,13 +14,14 @@ class MainRepository @Inject constructor(
 
     suspend fun deleteRun(run: Run) = runDao.delete(run)
 
-    fun getRunListByFilter(filter: Int = 0) {
-        when (filter) {
+    fun getRunListByFilter(filter: Int = 0): LiveData<List<Run>> {
+        return when (filter) {
             0 -> runDao.getRunsByDate()
             1 -> runDao.getRunsByDistanceInMeters()
             2 -> runDao.getRunsByTimeInMillis()
             3 -> runDao.getRunsByCaloriesBurned()
             4 -> runDao.getRunsByAvgSpeed()
+            else -> throw IllegalArgumentException("Invalid filter  value")
         }
     }
 

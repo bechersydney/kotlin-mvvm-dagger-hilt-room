@@ -6,14 +6,14 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.sample.kotlin_running_tracker.R
+import com.sample.kotlin_running_tracker.adapters.RunAdapter
 import com.sample.kotlin_running_tracker.databinding.FragmentRunBinding
 import com.sample.kotlin_running_tracker.ui.viewmodels.MainViewModel
-import com.sample.kotlin_running_tracker.utils.Constants
 import com.sample.kotlin_running_tracker.utils.Constants.REQUEST_CODE_LOCATION_PERMISSION
 import com.sample.kotlin_running_tracker.utils.TrackingUtility
 import dagger.hilt.android.AndroidEntryPoint
@@ -21,10 +21,12 @@ import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
 
 @AndroidEntryPoint
-class RunFragment: Fragment(R.layout.fragment_run), EasyPermissions.PermissionCallbacks {
-        private val viewModel: MainViewModel by viewModels()
-        private var binding: FragmentRunBinding? = null
-        private val view get() = binding!!
+class RunFragment : Fragment(R.layout.fragment_run), EasyPermissions.PermissionCallbacks {
+    private val viewModel: MainViewModel by viewModels()
+    private var binding: FragmentRunBinding? = null
+    private val view get() = binding!!
+
+    lateinit var runAdapter: RunAdapter
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -32,18 +34,35 @@ class RunFragment: Fragment(R.layout.fragment_run), EasyPermissions.PermissionCa
     ): View? {
         binding = FragmentRunBinding.inflate(inflater, container, false)
         requestPermissions()
-        view.fab.setOnClickListener {
-            findNavController().navigate(R.id.action_runFragment_to_trackingFragment)
-        }
-
+        initEvents()
+        setUpRecyclerView()
+        setUpObservers()
         return view.root
     }
 
+    private fun initEvents() {
+        view.fab.setOnClickListener {
+            findNavController().navigate(R.id.action_runFragment_to_trackingFragment)
+        }
+    }
+
+    private fun setUpRecyclerView() = view.rvRuns.apply {
+        runAdapter = RunAdapter()
+        adapter = runAdapter
+        layoutManager = LinearLayoutManager(requireContext())
+    }
+
+    private fun setUpObservers() {
+        viewModel.runs.observe(viewLifecycleOwner) { response ->
+            runAdapter.submitList(response)
+        }
+    }
+
     private fun requestPermissions() {
-        if(TrackingUtility.hasLocationPermission(requireContext())) {
+        if (TrackingUtility.hasLocationPermission(requireContext())) {
             return
         }
-        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             EasyPermissions.requestPermissions(
                 this,
                 "You need to accept location permissions to use this app.",
@@ -73,12 +92,13 @@ class RunFragment: Fragment(R.layout.fragment_run), EasyPermissions.PermissionCa
 
 
     override fun onPermissionsDenied(requestCode: Int, perms: MutableList<String>) {
-        if(EasyPermissions.somePermissionPermanentlyDenied(this, perms)){
+        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
             AppSettingsDialog.Builder(this).build().show()
         } else {
             requestPermissions()
         }
     }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
