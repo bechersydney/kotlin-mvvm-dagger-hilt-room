@@ -3,6 +3,7 @@ package com.sample.kotlin_running_tracker.data.repository
 import androidx.lifecycle.LiveData
 import com.sample.kotlin_running_tracker.data.db.RunDao
 import com.sample.kotlin_running_tracker.data.db.entities.Run
+import com.sample.kotlin_running_tracker.utils.enums.SortType
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -14,13 +15,13 @@ class MainRepository @Inject constructor(
 
     suspend fun deleteRun(run: Run) = runDao.delete(run)
 
-    fun getRunListByFilter(filter: Int = 0): LiveData<List<Run>> {
+    fun getRunListByFilter(filter: SortType = SortType.DATE): LiveData<List<Run>> {
         return when (filter) {
-            0 -> runDao.getRunsByDate()
-            1 -> runDao.getRunsByDistanceInMeters()
-            2 -> runDao.getRunsByTimeInMillis()
-            3 -> runDao.getRunsByCaloriesBurned()
-            4 -> runDao.getRunsByAvgSpeed()
+            SortType.DATE -> runDao.getRunsByDate()
+            SortType.DISTANCE -> runDao.getRunsByDistanceInMeters()
+            SortType.RUNNING_TIME -> runDao.getRunsByTimeInMillis()
+            SortType.CALORIES_BURNED -> runDao.getRunsByCaloriesBurned()
+            SortType.AVERAGE_SPEED -> runDao.getRunsByAvgSpeed()
             else -> throw IllegalArgumentException("Invalid filter  value")
         }
     }

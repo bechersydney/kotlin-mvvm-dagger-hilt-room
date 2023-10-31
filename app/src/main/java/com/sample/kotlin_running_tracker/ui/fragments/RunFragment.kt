@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -16,6 +17,7 @@ import com.sample.kotlin_running_tracker.databinding.FragmentRunBinding
 import com.sample.kotlin_running_tracker.ui.viewmodels.MainViewModel
 import com.sample.kotlin_running_tracker.utils.Constants.REQUEST_CODE_LOCATION_PERMISSION
 import com.sample.kotlin_running_tracker.utils.TrackingUtility
+import com.sample.kotlin_running_tracker.utils.enums.SortType
 import dagger.hilt.android.AndroidEntryPoint
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
@@ -34,15 +36,33 @@ class RunFragment : Fragment(R.layout.fragment_run), EasyPermissions.PermissionC
     ): View? {
         binding = FragmentRunBinding.inflate(inflater, container, false)
         requestPermissions()
+        initUI()
         initEvents()
         setUpRecyclerView()
         setUpObservers()
         return view.root
     }
 
+    private fun initUI(){
+        view.spFilter.setSelection(viewModel.sortType.ordinal)
+    }
+
     private fun initEvents() {
         view.fab.setOnClickListener {
             findNavController().navigate(R.id.action_runFragment_to_trackingFragment)
+        }
+        view.spFilter.onItemSelectedListener = object: AdapterView.OnItemSelectedListener{
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+               viewModel.sortRuns(SortType.values()[position])
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+            }
         }
     }
 
@@ -57,6 +77,8 @@ class RunFragment : Fragment(R.layout.fragment_run), EasyPermissions.PermissionC
             runAdapter.submitList(response)
         }
     }
+
+    private fun getSortTypeOrdinal(sortString: String): Int = SortType.valueOf(sortString).ordinal
 
     private fun requestPermissions() {
         if (TrackingUtility.hasLocationPermission(requireContext())) {

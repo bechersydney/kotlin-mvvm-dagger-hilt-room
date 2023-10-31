@@ -43,7 +43,7 @@ class TrackerService : LifecycleService() {
     @Inject
     lateinit var baseNotificationBuilder: NotificationCompat.Builder
 
-
+    @Inject
     lateinit var currentNotificationBuilder: NotificationCompat.Builder
 
     private var isServiceRunning = false

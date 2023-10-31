@@ -8,6 +8,7 @@ import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -39,7 +40,9 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
     private var isTracking = false;
     private var pathPoints = mutableListOf<Polyline>()
     private var currentTimeInMillis = 0L
-    private var weight = 80f
+
+    @set:Inject
+    var weight = 80f
 
     @Inject
     lateinit var mainServiceRepository: TrackingServiceRepository
@@ -72,7 +75,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
                 }
             }
 
-        })
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
         initView(savedInstanceState)
         initEvents()
         subscribeToObserver()
